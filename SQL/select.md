@@ -48,7 +48,7 @@ ON USING(c4);
 
 ``` SQL
 SELECT t1.*
-FROM t1 INNER JOIN t2
+FROM t1 LEFT JOIN t2
 ON t1.c1 = t2.c3
 WHERE t2.c3 IS NULL;
 ```
@@ -71,6 +71,8 @@ WHERE t2.c3 IS NULL;
 * 可以用运算符 EXISTS 和 NOT EXISTS 来测试子查询的结果是否为空.
 
 ### 将子查询转换为联结
+
+通常, 联接的效率比子查询高些. 但是最终还是要看测试结果来判断哪个效率高.
 
 ``` SQL
 -- 有一个模式:
