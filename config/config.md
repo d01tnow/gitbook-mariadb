@@ -30,7 +30,7 @@ Mariadb 镜像的数据存储文件是在容器的 /var/lib/mysql 目录下，�
 
 * 注释用 #
 * 忽略空行
-* 分组方式组织, \[grou-name\]
+* 分组方式组织: [group-name]
 * !include filename 用于包含其他配置文件
 * !include directory 用于包含其他目录下的配置文件(扩展名.cnf, .ini), 按字母顺序加载
 * loose做前缀的配置项是可选项, 表示配置项不被支持时不会产生错误. 比如: loose-innodb_file_per_table111
@@ -110,7 +110,7 @@ max_connections=400
 
 ##------------数据目录相关------------------------------------
 
-## 数据存储目录. 如果数据文件不用绝对路径, 那么都会保存在该路径下
+## 数据存储目录. 如果数据文件的配置值不用绝对路径, 那么都会保存在该路径下
 datadir=/var/lib/mysql
 ## 所有日志文件和 .pid 文件的 basename, 官方强烈推荐用这种方式设置日志和 pid 文件的文件名
 ## 如果不指定它, 那么日志文件的 basename 依赖 hostname, 这会有问题
@@ -141,7 +141,8 @@ long_query_time=10
 ## Galera 集群要求必须为: ROW
 binlog_format=ROW
 
-## 从其他节点同步的数据是否也写日志. 默认: 0. 必须开启.
+## 从其他节点同步的数据是否也写日志. 默认: 0.
+## Galera 集群必须开启.
 log_slave_updates=1
 
 ##--------------------------字符集相关------------------------------------
@@ -162,7 +163,9 @@ collation_server=utf8_general_ci
 ## Galera 集群当前仅支持事务引擎 XtraDB/InnoDB, 不支持非事务引擎 MyISAM.
 default_storage_engine=InnoDB
 ## 自增字段锁模式.
-## 0: 每次申请会锁表; 1: 默认值, 会生成连续的自增值; 2: 不使用表级锁, 速度快, 但是基于语句(statement-based)的复制不安全
+## 0: 每次申请会锁表;
+## 1: 默认值, 会生成连续的自增值;
+## 2: 不使用表级锁, 速度快, 但是基于语句(statement-based)的复制不安全
 ## Galera 集群要求必须为: 2 . 因为 Galera 集群不能使用表级锁.
 innodb_autoinc_lock_mode=2
 ## 日志刷盘模式
