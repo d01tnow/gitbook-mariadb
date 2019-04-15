@@ -149,7 +149,7 @@ blocking_lock_id | 阻塞的锁的ID
 #### Innodb 三种行锁算法
 
 * Record Lock: 锁定单行记录.
-* Gap Lock: 间隙锁. 锁定一个范围, 但不包括记录本身. GAP锁的目的，是为了防止同一事务的两次当前读，出现幻读的情况。
+* Gap Lock: 间隙锁. 锁定一个范围, 但不包括记录本身. GAP锁的目的，是为了防止同一事务的两次当前读，出现幻读的情况。间隙锁可以同时存在(Gap locks can co-exist.). 一个事务占有了 GAP Lock, 不会h阻止另一个事务占有同一个间隙的间隙锁. 间隙锁可以隐式禁用. 在 Read Committed 隔离级别下或者使能 innodb_locks_unsafe_for_binglog 变量(已经不推荐使用该变量), 则禁用间隙锁.
 * Next-Key Lock: 行锁+间隙锁. 锁定一个范围, 包括记录本身.
 
 不加lock inshare mode之类的快照读就使用mvcc。否则, 当前读使用next-key。mvcc的优势是不加锁，并发性高。缺点是不是实时数据。next-key的优势是获取实时数据，但是需要加锁。
