@@ -41,6 +41,24 @@ select @@session.old_passwords,  @@global.old_passwords ,
 -- password('123')         | *23AE809DDACAF96AF0FD78ED04B6A265E05AA257
 ```
 
+### 查看授权
+
+``` sql
+-- 第一种方法
+show grants for user_name;
+
+-- 第二种
+-- 全局授权
+select * from mysql.user where user='user_name'\G;
+-- 数据库级授权
+select * from mysql.db where user='user_name'\G;
+-- 表级授权
+select * from mysql.tables_priv where user='user_name'\G;
+-- 列级授权
+select * from mysql.columns_priv where user='user_name'\G;
+
+```
+
 ## DROP
 
 ``` sql
