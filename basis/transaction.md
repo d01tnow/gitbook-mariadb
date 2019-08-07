@@ -62,6 +62,27 @@ Innodb 在REPEATABLE_READ 级别下产生幻读的原因是前面的UPDATE语句
 
 Innodb 一致性非锁定读 ( consistent Nonlocking read ): 简称一致性读. 也称快照读. 是一种非严格意义上的 MVCC (多版本并发控制)实现. **在不同的隔离级别下, 一致性非锁定读的表现不一样**. 在 Repeatable Read 级别下快照建立的时间点是第一条select语句执行的时间点. 同一事务中, 当前读会更新当前事务使用快照的版本. 在 Read Commited 级别下, 它总是读取行的最新版本, 如果行被锁定, 则读取最新的快照.
 
+### Innodb 的 MVCC
+
+innodb 的 MVCC 是通过在每行记录后增加三个隐藏列[实现][4]的.
+
+列名 | 长度(字节) | 作用
+---- | ---- | ----
+DB_TRX_ID | 6 | 标记最后插入或更新这条记录的 transaction id. 删除视为更新.
+DATA_ROLL_PTR | 7 | 指向当前记录的 rollback segment 的 undo log 记录的指针.
+DB_ROW_ID | 6 | 自增的行id. 如果表没有主键, innodb 使用该 ID 创建聚集索引.
+
+下表描述在 RR 隔离级别下 INSERT/DELETE/UPDATE 如何修改隐藏列. CUR_TRX_ID 表示当前事务 ID.
+
+操作 | 修改列
+---- | ----
+INSERT | DB_ROW_ID + 1; DB_TRX_ID = CUR_TRX_ID
+DELETE | DB_TRX_ID = CUR_TRX_ID
+UPDATE | 创建一个新记录(一个新版本), DB_TRX_ID = CUR_TRX_ID;
+UPDATE | 修改上一个版本的记录的 DB_TRX_ID = CUR_TRX_ID;
+
+undo log
+
 ### Innodb 的锁
 
 InnoDB实现了两种标准的行级锁:
@@ -165,3 +186,4 @@ blocking_lock_id | 阻塞的锁的ID
 1. [自己动手实践理解数据库REPEATABLE_READ&&Next-KeyLock](https://www.cnblogs.com/songwenjie/p/8643684.html)
 2. [MySQL探秘(六):InnoDB一致性非锁定读](https://juejin.im/post/5bf168aae51d453b8e54442c)
 3. [MySQL探秘(五):InnoDB锁的类型和状态查询](https://mp.weixin.qq.com/s?__biz=MzU2MDYwMDMzNQ==&mid=2247483694&idx=1&sn=671ad369f67441c7d1572110066d5695&chksm=fc04c54ecb734c58101f8ff020914f4cccaf6660742a6723b431066ca05d5e71365dfd8d4556&scene=21#wechat_redirect)
+4. [InnoDB Multi-Versioning](https://dev.mysql.com/doc/refman/5.7/en/innodb-multi-versioning.html)
