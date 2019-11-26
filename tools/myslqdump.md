@@ -21,7 +21,7 @@
 - --single-transaction: 仅在存储引擎支持 MVCC 的情况下工作, 当前仅 Innodb 有效. 该选项会关闭 --lock-tables 选项.
 - --replace: 使用 REPLACE INTO 代替 INSERT INTO.
 - --hex-blob: 使用十六进制格式导出二进制字段. 如果有二进制数据必须使用该选项.
-- --master-data=#: 将 binlog 的位置和文件名追加到输出文件中. 如果为1，将会输出CHANGE MASTER 命令；如果为2，输出的CHANGE  MASTER命令前添加注释信息。该选项将打开--lock-all-tables 选项，除非--single-transaction也被指定（在这种情况下，全局读锁在开始导出时获得很短的时间；其他内容参考下面的--single-transaction选项）。该选项自动关闭--lock-tables选项。
+- --master-data=#: 将 binlog 的位置和文件名追加到输出文件中. 如果为1，将会输出CHANGE MASTER 命令；如果为2，输出的CHANGE  MASTER命令前添加注释信息。该选项将打开--lock-all-tables 选项，除非--single-transaction也被指定（在这种情况下，全局读锁在开始导出时获得很短的时间；其他内容参考下面的--single-transaction选项）。该选项自动关闭--lock-tables选项。该选项需要 RELOAD 权限.
 
 ## 注意问题
 
