@@ -13,6 +13,7 @@
 - --complete-insert, -c: 使用完整的 INSERT 语句(包含列名). 可以提高效率, 但是可能受到 max_allowed_packet 参数的影响导致插入失败
 - --compress, -C : 在 client/server 间传输数据时启用压缩
 - --database, -B: 导出指定名称的多个数据库. 参数后面的名称都作为数据库名.
+- --tables: 导出指定数据库的多张表. -B 后只能指定一个数据库. 例如: -B db1 --tables t1 t2 t3
 - --flush-logs, -F: 开始导出每个数据库前 flush logs.
 - --flush-privileges: 在导出 mysql 数据库之后, 执行一条 FLUSH PRIVILEGES 语句. 该选项应该用于导出mysql数据库和依赖mysql数据库数据的任何时候。
 - --force, -f: 忽略导出过程中的 SQL 错误.
