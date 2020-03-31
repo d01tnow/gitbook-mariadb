@@ -20,8 +20,8 @@
 mysql 支持的索引类型:
 
 * 主键索引(PRIMARY INDEX): 是聚集索引, 即表数据的主键顺序决定了物理顺序, 物理顺序同主键顺序一致. 如果表没有主键, mysql 会选择第一个 UNIQUE 索引（所有列都是 NOT NULL）的作为聚集索引。 如果没有这样的索引，mysql 创建一个对用户不可见的自增ID列作为聚集索引.
-* 唯一索引 (UNIQUE): 对于单列索引, 不允许出现重复值. 对于多列(复合)索引, 不允许出现重复的组合值.
-* 常规(非唯一性)索引: 它可以让你获得索引的好处, 但是会出现重复值的情况.
+* 唯一索引 (UNIQUE): 对于单列索引, 不允许出现重复值. 对于多列(复合)索引, 不允许出现重复的组合值. 更新操作需要将数据页读入内存, 判断是否唯一, 唯一才能更新.
+* 常规(非唯一性)索引: 它可以让你获得索引的好处, 但是会出现重复值的情况. 更新记录 change buffer(改善写操作, 使用 buffer pool 中的内存, 也会被持久化) 中就返回了.
 * FULLTEXT 索引: 它可以用于全文检索.
 * SPATIAL 索引: 它只适用于包含空间值的 MyISAM 表.
 * MEMORY 索引: 它是 MEMORY 表的默认索引类型, 不过可以通过创建 BTREE 索引来改写它.
@@ -51,7 +51,7 @@ SHOW INDEX FROM tbl_name \G
 * ALTER TABLE tbl_name ADD FULLTEXT    index_name (index_columns);
 * ALTER TABLE tbl_name ADD SPATIAL     index_name (index_columns);
 
-其中 tbl_name 是表名, index_name 是索引名, 可选, 不写时取第一个索引列的名字. index_columns 是要索引的列(多个列用 ',' 分隔). 如果要建前缀索引, 可以在列名后加括号, 括号里填写前缀长度. 例如: index_column(number).
+其中 tbl_name 是表名, index_name 是索引名, 可选, 不写时取第一个索引列的名字. index_columns 是要索引的列(多个列用 ',' 分隔, 又称复合索引). 如果要建前缀索引, 可以在列名后加括号, 括号里填写前缀长度. 例如: index_column(number). 对于列的值较长，比如BLOB、TEXT、VARCHAR，就必须建立前缀索引.
 如果指明 PRIMARY KEY 或 SPATIAL , 则它必须是 NOT NULL 的. 其他类型索引允许包含 NULL 值.
 PRIMARY KEY 和 UNIQUE 都可以限制某个索引**只包含唯一值**. 它们的区别是:
 

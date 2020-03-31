@@ -43,8 +43,8 @@ set autocommit=off;
 ### 实现方式
 
 * READ_UNCOMMITTED: 没有视图概念, 直接返回记录的最新值(Innodb buffer pool 内存中的值)
-* READ_COMMITTED: 在每个 SQL 执行时数据库里创建一个视图(read-view). 数据是当前时间点前已经提交的事务修改的数据的最新值.
-* REPEATABLE_READ: 在事务开启后的第一个 DML 语句执行时创建的视图, 整个事务存在期间都用这个视图. "即可读" 语句会更新该视图.
+* READ_COMMITTED: 在每个 SQL 执行时数据库里创建一个视图(read-view, 根据数据行的事务id和数据行的 undo-log 计算得到的). 数据是当前时间点前已经提交的事务修改的数据的最新值.
+* REPEATABLE_READ: 在事务开启后的第一个 DML 语句执行时创建的视图, 整个事务存在期间都用这个视图. "即可读" 语句会更新该视图(只更新被其他事务更新的已提交的行).
 * SERIALIZABLE: 直接加锁方式避免事务并行.
 
 ## Innodb
