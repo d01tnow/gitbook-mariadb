@@ -9,7 +9,7 @@
 3. 数据库 root 或者 有 REPLICATION SLAVE 权限的 user.
 4. 第一个集群节点到第二个集群节点免密访问.
 
-以下例子中集群 1 (3个节点) 简称 A, ip 为 ipA1~3, 集群 2 (3个节点) 简称 B, ip 为 ipB1~3 . 端口都是默认的 3306. A 为 master, B 为 slave. 
+以下例子中集群 1 (3个节点) 简称 A, ip 为 192.168.150.24~3, 集群 2 (3个节点) 简称 B, ip 为 192.168.150.21~3 . 端口都是默认的 3306. A 为 master, B 为 slave. 
 
 为了模拟生产环境, 初始状态下, A 启动, B 未启动. 
 
@@ -55,7 +55,7 @@ wsrep_gtid_domain_id=N
 ``` shell
 # 通过 mariadb client - mysql 设置
 # A1~3
-mysql -u root -p -h ipA1 << EOF
+mysql -u root -p -h 192.168.150.24 << EOF
 set wsrep_gtid_mode=ON
 set wsrep_gtid_domain_id=1
 set gtid_domain_id=50001
@@ -72,7 +72,7 @@ set gtid_domain_id=50003
 EOF
 
 # 创建备份用户
-mysql -u root -p -h ipA1 << EOF
+mysql -u root -p -h 192.168.150.24 << EOF
 CREATE USER 'repl'@'192.168.%' IDENTIFIED BY 'password';
 GRANT REPLICATION SLAVE ON *.*  TO 'repl'@'192.168.%';
 FLUSH PRIVILEGES;
@@ -96,7 +96,7 @@ mariabackup --backup \
 mariabackup --prepare --target-dir=/var/lib/mysql/backup/fullbackup
 
 # 拷贝准备好的备份数据到 B1. 需要先做 A1 到 B1 的 ssh 免密. 并且 /backup 有读写权限
-rsync -avrP /var/lib/mysql/backup/fullbackup/ ipB1:/backup
+rsync -avrP /var/lib/mysql/backup/fullbackup/ 192.168.150.21:/backup
 ```
 
 ### 部署第二个集群
@@ -147,15 +147,15 @@ wsrep_sst_auth="root:the_same_with_A"
 ``` shell
 # 带 --wsrep-new-cluster 参数启动集群
 # 查看第一个集群的 master 状态
-mysql -u root -p -h ipA1 -e 'show master status;'
+mysql -u root -p -h 192.168.150.24 -e 'show master status;'
 # 假设输出
 # File	Position	Binlog_Do_DB	Binlog_Ignore_DB
 # mysql-bin.000018	2418
 
 # 设置第二个集群的 B1 的 master 为 A1
 # 并检查结果
-mysql -u root -p -h ipB1 << EOF
-change master to master_host="ipA1", master_user="repl", master_password="password", master_log_file="mysql-bin.000018", master_log_pos=2418;
+mysql -u root -p -h 192.168.150.21 << EOF
+change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_log_file="mysql-bin.000018", master_log_pos=2418;
 start slave;
 show slave status\G;
 EOF
@@ -177,7 +177,7 @@ mysql -u root -p -h ipB2 -e "show status like 'wsrep%';"
 # wsrep_local_state_comment    | Synced
 
 # 设置第二个集群所有节点为只读
-mysql -u root -p -h ipB1 -e 'set global read_only=on;'
+mysql -u root -p -h 192.168.150.21 -e 'set global read_only=on;'
 
 mysql -u root -p -h ipB2 -e 'set global read_only=on;'
 
@@ -190,15 +190,15 @@ mysql -u root -p -h ipB3 -e 'set global read_only=on;'
 
 ``` shell
 # 查看第二个集群(B)的 master 状态
-mysql -u root -p -h ipB1 -e 'show master status;'
+mysql -u root -p -h 192.168.150.21 -e 'show master status;'
 # 假设输出
 # File	Position	Binlog_Do_DB	Binlog_Ignore_DB
 # mysql-bin.000004	96
 
 # 设置第一个集群的 A1 的  master 为 B1
 # 并检查结果
-mysql -u root -p -h ipA1 << EOF
-change master to master_host="ipB1", master_user="repl", master_password="password", master_log_file="mysql-bin.000004", master_log_pos=96;
+mysql -u root -p -h 192.168.150.24 << EOF
+change master to master_host="192.168.150.21", master_user="repl", master_password="password", master_log_file="mysql-bin.000004", master_log_pos=96;
 start slave;
 show slave status\G;
 EOF
