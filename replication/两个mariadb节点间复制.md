@@ -13,7 +13,7 @@
 
 为了模拟生产环境, 初始状态下, A 启动, B 未启动. 
 
-2个集群采用 ansible [安装](#ansible方式). 
+2个节点采用 ansible [安装](#ansible方式). 
 
 ## 结构图
 
@@ -134,15 +134,3 @@ EOF
 # Seconds_Behind_Master          | 0
 ```
 
-## 集群安装
-
-### ansible方式
-
-解压 [test_ansible.zip](./test_ansible.zip). 修改文件中的 ip 指向正确的主机. 
-
-说明: 
-
-1. mariadb 集群对应主从模式或主主模式中的 A 集群. mariadb_repl 集群对应主从模式或主主模式中的 B 集群.
-2. 集群最小节点数量为 2. 比如: mariadb_repl .
-
-相关命令参见 playbooks/mariadb_readme.md 和 playbooks/mariadb_repl_readme.md.

@@ -4,14 +4,41 @@
 
 前置条件:
 
-1. 主机中安装 mariabackup 工具. [安装方法](../tools/installing-tools.md).
-2. 主机 sudo 权限 或者 mysql user(容器内 mysql 用户:组 -- mysql:mysql . uid:gid -- 999:999).
-3. 数据库 root 或者 有 REPLICATION SLAVE 权限的 user.
-4. 第一个集群节点到第二个集群节点免密访问.
+1. 主控机上安装 ansible 环境, Mariadb-client.
+2. 被控主机中安装 mariabackup 工具. [安装方法](../tools/installing-tools.md).
+3. 被控主机 sudo 权限 或者 mysql user(容器内 mysql 用户:组 -- mysql:mysql . uid:gid -- 999:999).
+4. 数据库 root 或者 有 REPLICATION SLAVE 权限的 user.
+5. 第一个集群节点到第二个集群节点免密访问.
 
 以下例子中集群 1 (3个节点) 简称 A, ip 为 192.168.150.24~3, 集群 2 (3个节点) 简称 B, ip 为 192.168.150.21~3 . 端口都是默认的 3306. A 为 master, B 为 slave. 
 
 为了模拟生产环境, 初始状态下, A 启动, B 未启动. 
+
+## 集群安装
+
+### ansible方式
+
+解压 [test_ansible.zip](./test_ansible.zip). 修改文件中的 ip 指向正确的主机. 
+
+说明: 
+
+1. mariadb 集群对应主从模式或主主模式中的 A 集群. mariadb_repl 集群对应主从模式或主主模式中的 B 集群.
+2. 集群最小节点数量为 2. 比如: mariadb_repl .
+
+相关命令参见 playbooks/mariadb_readme.md 和 playbooks/mariadb_repl_readme.md.
+
+#### 安装步骤
+
+``` shell
+# init, 输入 sudo 用户密码
+ansible-playbook -i ../inventory pb_mariadb.yml -t init,updateconf -K
+# deploy
+ansible-playbook -i ../inventory pb_mariadb.yml -t deploy
+# 启动服务, 检查端口
+ansible-playbook -i ../inventory pb_mariadb.yml -t start,check
+```
+
+
 
 ## 主从模式
 
@@ -101,7 +128,7 @@ rsync -avrP /var/lib/mysql/backup/fullbackup/ 192.168.150.21:/backup
 
 ### 部署第二个集群
 
-假设第二个集群部署在 /app/midserv/mariadb_repl 目录. 数据目录为 /mount_data/mariadb_repl/data. 
+假设第二个集群部署在 /app/midserv/mariadb_repl 目录. 数据目录为 /Madb/mariadb_repl/data. 
 
 **注意**: 因为集群 B 使用的是集群 A 全量备份恢复的数据库. 所以, 配置中 root 用户的密码要同集群 A 的相同(例子中的 wsrep_sst_auth="root:the_same_with_A".
 
@@ -109,12 +136,12 @@ rsync -avrP /var/lib/mysql/backup/fullbackup/ 192.168.150.21:/backup
 # 登录 B1
 # 拷贝备份数据到数据目录
 # /backup 需要读权限
-# /mount_data/mariadb_repl/data 需要写权限
-mariabackup --copy-back  --datadir=/mount_data/mariadb_repl/data \
+# /Madb/mariadb_repl/data 需要写权限
+mariabackup --copy-back  --datadir=/Madb/mariadb_repl/data \
 	--target-dir=/backup
 	
 # 修改数据目录权限. 因容器中 mysql:mysql 的 uid:gid 为 999:999
-sudo chown -R 999:999 /mount_data/mariadb_repl/data
+sudo chown -R 999:999 /Madb/mariadb_repl/data
 
 # 检查 B1 的配置
 server_id = 200
