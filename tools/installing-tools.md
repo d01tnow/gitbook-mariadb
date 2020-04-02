@@ -2,7 +2,7 @@
 
 ## 安装
 
-### CentOS7 
+### CentOS7
 
 [参考](https://mariadb.com/kb/en/yum/#installing-the-most-common-packages-with-yum)
 
@@ -12,7 +12,7 @@
 
 ``` shell
 # 先安装 repo 文件
-sudo vi /etc/yum.repo.d/mariadb.repo
+sudo vi /etc/yum.repos.d/mariadb.repo
 
 [mariadb]
 name = MariaDB
