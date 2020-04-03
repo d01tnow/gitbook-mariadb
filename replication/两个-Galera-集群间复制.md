@@ -79,23 +79,25 @@ wsrep_gtid_domain_id=N
 
 ### 设置第一个集群
 
+1. 使用命令方式
+
 ``` shell
 # 通过 mariadb client - mysql 设置
 # A1~3
 mysql -u root -p -h 192.168.150.24 << EOF
-set wsrep_gtid_mode=ON
-set wsrep_gtid_domain_id=1
-set gtid_domain_id=50001
+set global wsrep_gtid_mode=ON;
+set global wsrep_gtid_domain_id=1;
+set global gtid_domain_id=50001;
 EOF
 mysql -u root -p -h ipA2 << EOF
-set wsrep_gtid_mode=ON
-set wsrep_gtid_domain_id=1
-set gtid_domain_id=50002
+set global wsrep_gtid_mode=ON;
+set global wsrep_gtid_domain_id=1;
+set global gtid_domain_id=50002;
 EOF
 mysql -u root -p -h ipA3 << EOF
-set wsrep_gtid_mode=ON
-set wsrep_gtid_domain_id=1
-set gtid_domain_id=50003
+set global wsrep_gtid_mode=ON;
+set global wsrep_gtid_domain_id=1;
+set global gtid_domain_id=50003;
 EOF
 
 # 创建备份用户
@@ -104,6 +106,68 @@ CREATE USER 'repl'@'192.168.%' IDENTIFIED BY 'password';
 GRANT REPLICATION SLAVE ON *.*  TO 'repl'@'192.168.%';
 FLUSH PRIVILEGES;
 EOF
+```
+
+2. 使用ansible脚本方式
+
+``` shell
+ansible-playbook pb_mariadb_config_wsrep_gtid.yml -t set_gtid -e set_gtid_enabled=1 -e mdb_grp=mariadb
+```
+
+pb_mariadb_config_wsrep_gtid.yml
+
+``` yaml
+- hosts: localhost
+  gather_facts: no
+  tasks:
+  - block:
+    - name: 打印组信息
+      debug:
+        msg: "{{item}}"
+      loop: "{{ groups[mdb_grp]|sort }}"
+    - name: 打印 mariadb_gtid_domain_id
+      debug: var=hostvars[item].mariadb_gtid_domain_id
+      loop: "{{ groups[mdb_grp]|sort }}"
+    - name: 打印 mariadb_wsrep_gtid_domain_id
+      debug: var=hostvars[item].mariadb_wsrep_gtid_domain_id
+      loop: "{{ groups[mdb_grp]|sort }}"
+    tags: set_gtid
+
+
+  - name: 确认组信息
+    pause: minutes=2
+    tags: set_gtid
+
+  - name: configuring wsrep gtid mode
+    shell: |
+      mysql -h {{hostvars[item].ansible_ssh_host}} -p{{hostvars[item].mariadb_root_password}} -u root << EOF
+      -- 打开 gtid 模式
+      set global wsrep_gtid_mode=ON;
+      -- 设置写集的 gtid domain id. 一个集群内所有节点相同.
+      set global wsrep_gtid_domain_id={{hostvars[item].mariadb_wsrep_gtid_domain_id}};
+      -- 设置 domain 内的 gtid. 要保证, 一个集群内所有节点 **唯一**.
+      set global gtid_domain_id={{hostvars[item].mariadb_gtid_domain_id}}
+
+      EOF
+    loop: "{{ groups[mdb_grp]|sort }}"
+    when: set_gtid_enabled | bool
+    tags: set_gtid
+
+  - name: check wsrep gtid
+    shell: |
+      mysql -h {{hostvars[item].ansible_ssh_host}} -p{{hostvars[item].mariadb_root_password}} -u root -e "show global variables like '%gtid_%';"
+    loop: "{{ groups[mdb_grp]|sort }}"
+    register: check_result
+    tags:
+    - set_gtid
+    - check_gtid
+  - name: 打印检查结果
+    debug: var=check_result.results|map(attribute='stdout_lines')|list
+    tags:
+    - set_gtid
+    - check_gtid
+
+
 ```
 
 ### 备份第一个集群数据
@@ -120,10 +184,13 @@ mariabackup --backup \
 	--user=root --password=root_pwd
 	
 # 准备
-mariabackup --prepare --target-dir=/var/lib/mysql/backup/fullbackup
+mariabackup --prepare --target-dir=/backup/fullbackup
 
+# 退出容器
 # 拷贝准备好的备份数据到 B1. 需要先做 A1 到 B1 的 ssh 免密. 并且 /backup 有读写权限
-rsync -avrP /var/lib/mysql/backup/fullbackup/ 192.168.150.21:/backup
+# /Madb/mariadb/backup 是 /backup 在主机上的映射
+suco chown -R wangzhijun /Madb/mariadb/backup/fullbackup
+rsync -avrP /Madb/mariadb/backup/fullbackup 192.168.150.21:/backup
 ```
 
 ### 部署第二个集群
@@ -143,14 +210,14 @@ mariabackup --copy-back  --datadir=/Madb/mariadb_repl/data \
 # 修改数据目录权限. 因容器中 mysql:mysql 的 uid:gid 为 999:999
 sudo chown -R 999:999 /Madb/mariadb_repl/data
 
-# 检查 B1 的配置
+# 检查 B1 的配置, 被控机B1上 /app/midserv/mariadb_repl/config/cluster.cnf
 server_id = 200
 wsrep_gtid_mode=ON
 wsrep_gtid_domain_id=200
 gtid_domain_id=50201
 wsrep_sst_auth="root:the_same_with_A"
 
-# 检查 B2 的配置
+# 检查 B2 的配置, 被控机B2上 /app/midserv/mariadb_repl/config/cluster.cnf
 server_id = 200
 wsrep_gtid_mode=ON
 # 同 server_id
@@ -159,7 +226,7 @@ wsrep_gtid_domain_id=200
 gtid_domain_id=50202
 wsrep_sst_auth="root:the_same_with_A"
 
-# 检查 B3 的配置
+# 检查 B3 的配置, 被控机B3上 /app/midserv/mariadb_repl/config/cluster.cnf
 server_id = 200
 wsrep_gtid_mode=ON
 # 同 server_id
