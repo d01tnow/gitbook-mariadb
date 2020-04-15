@@ -189,7 +189,7 @@ mariabackup --prepare --target-dir=/backup/fullbackup
 # 退出容器
 # 拷贝准备好的备份数据到 B1. 需要先做 A1 到 B1 的 ssh 免密. 并且 /backup 有读写权限
 # /Madb/mariadb/backup 是 /backup 在主机上的映射
-suco chown -R user /Madb/mariadb/backup/fullbackup
+sudo chown -R user /Madb/mariadb/backup/fullbackup
 
 # 进入 B 机器, 建立 /backup 目录
 ssh user@192.168.150.21 
@@ -204,7 +204,7 @@ rsync -avrP /Madb/mariadb/backup/fullbackup 192.168.150.21:/backup
 
 假设第二个集群部署在 /app/midserv/mariadb_repl 目录. 数据目录为 /Madb/mariadb_repl/data. 
 
-**注意**: 因为集群 B 使用的是集群 A 全量备份恢复的数据库. 所以, 配置中 root 用户的密码要同集群 A 的相同(例子中的 wsrep_sst_auth="root:the_same_with_A".
+**注意**: 因为集群 B 使用的是集群 A 全量备份恢复的数据库. 所以, 配置中 root 用户的密码要同集群 A 的相同(例子中的 wsrep_sst_auth="root:the_same_as_A".
 
 ``` shell
 # 登录 B1
@@ -261,7 +261,7 @@ start slave;
 show slave status\G;
 EOF
 
-# 结果中出现以下,表示正常
+# 结果中出现以下,表示正常(出现Slave_IO_Running: Connecting 时，需要等几秒后再次查询)
 # Slave_IO_Running               | Yes
 # Slave_SQL_Running              | Yes
 # Seconds_Behind_Master 表示同步时间延后 master 的秒数. 0 表示同步.
@@ -304,7 +304,7 @@ start slave;
 show slave status\G;
 EOF
 
-# 结果中出现以下,表示正常
+# 结果中出现以下,表示正常(出现Slave_IO_Running: Connecting 时，需要等几秒后再次查询)
 # Slave_IO_Running               | Yes
 # Slave_SQL_Running              | Yes
 # Seconds_Behind_Master 表示同步时间延后 master 的秒数. 0 表示同步.

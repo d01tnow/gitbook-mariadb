@@ -93,13 +93,13 @@ DROP INDEX `PRIMARY` ON tbl_name
 
 ## 索引失效
 
-* 查询条件中对索引列进行运算, 运算包括( +, -, *, /, DIV(整除), %(取模), !, NOT, like '%_'(%_放在前面)).
+* 查询条件中对索引列进行运算, 运算包括( +, -, *, /, DIV(整除), %(取模), like '%_'(%_放在前面)).
 * 条件中类型错误, 比如字段类型为 VARCHAR, where 中使用 NUMBER.
 * 如果列类型是字符串，那一定要在条件中数据使用引号，否则不使用索引.
 * 条件中对索引使用内部函数(如: WHERE DAY(column)), 这种情况应该建立基于函数的索引. 如select * from template t where ROUND(t.logicdb_id) = 1; 此时应该建ROUND(t.logicdb_id)为索引，mysql8.0开始支持函数索引，5.7可以通过虚拟列的方式来支持，之前只能新建一个ROUND(t.logicdb_id)列然后去维护.
 * 如果条件有 OR ，只有在 OR 条件中的每个列都有索引时才有效, 否则无效.
-* B-tree索引 is null不会走,is not null会走,位图索引 is null,is not null 都会走
 * 组合索引遵循最左原则. 如: A,B,C 字段建立组合索引(A,B,C), 当 WHERE A='...' 时有效, 而当 WHERE B='...' 时无效.
+* IS NULL, IS NOT NULL，!= 是否走索引，也是根据成本判断的。[参考](https://www.cnblogs.com/niuben/p/11197945.html)
 * 重复数据较多的列, 即使建立索引效果也不好. 引擎判断全表查询花费更低时, 也会使索引失效.
 
 ## 挑选索引
