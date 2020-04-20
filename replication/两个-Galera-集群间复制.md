@@ -188,8 +188,8 @@ mariabackup --backup \
 mariabackup --prepare --target-dir=/var/lib/mysql/backup/fullbackup
 
 # 退出容器
-# 拷贝准备好的备份数据到 B1. 需要先做 A1 到 B1 的 ssh 免密. 并且 /backup 有读写权限
-# /Madb/mariadb/data/backup 是容器内 /backup 在主机上的映射
+# 拷贝准备好的备份数据到 B1(假设存放目录: /backup ). 需要先做 A1 到 B1 的 ssh 免密. 并且 /backup 有读写权限
+# /Madb/mariadb/data/backup 是容器内 /var/lib/mysql/backup 在主机上的映射
 sudo chown -R user /Madb/mariadb/data/backup/fullbackup
 
 # 进入 B 机器, 建立 /backup 目录
