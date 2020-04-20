@@ -149,6 +149,7 @@ pb_mariadb_config_wsrep_gtid.yml
       set global gtid_domain_id={{hostvars[item].mariadb_gtid_domain_id}}
 
       EOF
+      
     loop: "{{ groups[mdb_grp]|sort }}"
     when: set_gtid_enabled | bool
     tags: set_gtid
@@ -184,12 +185,12 @@ mariabackup --backup \
 	--user=root --password=root_pwd
 	
 # 准备
-mariabackup --prepare --target-dir=/backup/fullbackup
+mariabackup --prepare --target-dir=/var/lib/mysql/backup/fullbackup
 
 # 退出容器
 # 拷贝准备好的备份数据到 B1. 需要先做 A1 到 B1 的 ssh 免密. 并且 /backup 有读写权限
-# /Madb/mariadb/backup 是 /backup 在主机上的映射
-sudo chown -R user /Madb/mariadb/backup/fullbackup
+# /Madb/mariadb/data/backup 是容器内 /backup 在主机上的映射
+sudo chown -R user /Madb/mariadb/data/backup/fullbackup
 
 # 进入 B 机器, 建立 /backup 目录
 ssh user@192.168.150.21 
@@ -197,7 +198,7 @@ sudo mkdir /backup
 sudo chown user /backup
 # CTRL +D 退出 B, 回到 A
 
-rsync -avrP /Madb/mariadb/backup/fullbackup 192.168.150.21:/backup
+rsync -avrP /Madb/mariadb/data/backup/fullbackup 192.168.150.21:/backup
 ```
 
 ### 部署第二个集群
@@ -212,7 +213,7 @@ rsync -avrP /Madb/mariadb/backup/fullbackup 192.168.150.21:/backup
 # /backup 需要读权限
 # /Madb/mariadb_repl/data 需要写权限
 mariabackup --copy-back  --datadir=/Madb/mariadb_repl/data \
-	--target-dir=/backup
+	--target-dir=/backup/fullbackup
 	
 # 修改数据目录权限. 因容器中 mysql:mysql 的 uid:gid 为 999:999
 sudo chown -R 999:999 /Madb/mariadb_repl/data
