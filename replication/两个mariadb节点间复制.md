@@ -48,6 +48,14 @@ log_basename=mariadb
 # 进入 mariadb 容器
 # 建立备份目录
 mkdir -p /var/lib/mysql/backup/fullbackup
+
+# 创建备份用户
+mysql -u root -p  << EOF
+CREATE USER 'repl'@'192.168.%' IDENTIFIED BY 'password';
+GRANT REPLICATION SLAVE ON *.*  TO 'repl'@'192.168.%';
+FLUSH PRIVILEGES;
+EOF
+
 # 备份数据.
 # --target-dir 指明备份数据存放目录
 mariabackup --backup \
@@ -77,7 +85,7 @@ rsync -avrP /Madb/mariadb/backup/fullbackup 192.168.150.21:/backup
 # 登录 B
 # 拷贝备份数据到数据目录
 mariabackup --copy-back  --datadir=/mount_data/mariadb_repl/data \
-	--target-dir=/backup
+	--target-dir=/backup/fullbackup
 	
 # 修改数据目录权限. 因容器中 mysql:mysql 的 uid:gid 为 999:999
 sudo chown -R 999:999 /mount_data/mariadb_repl/data
@@ -90,19 +98,32 @@ cd /app/midserv/mariadb_repl
 # 启动
 docker-compose up -d
 
-# 查看 master status
-mysql -u root -proot_pwd -h 192.168.150.24 -e 'show master status;'
-# 假设输出
-# File	Position	Binlog_Do_DB	Binlog_Ignore_DB
-# mysql-bin.000018	2418
+# 查看备份数据中的 master status
+cat /backup/fullbackup/xtrabackup_binlog_info
+# 假设输出: mysql-bin.001037        1166046      0-1-17670284
+# 其中 0-1-17670284 就是 gtid
 
+# 两种方式配置 change master
+# 推荐 gtid 模式
+# 第一种方式配置 change master: 使用 GTID
 # 设置 B 的 master 为 A
 # 并检查结果
 mysql -u root -p -h 192.168.150.21 << EOF
-change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_log_file="mysql-bin.000018", master_log_pos=2418;
+set global gtid_slave_pos="0-1-17670284";
+change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_use_gtid=slave_pos;
 start slave;
 show slave status\G;
 EOF
+
+# 第二种方式配置 change master: 使用日志文件和位置
+# 设置 B 的 master 为 A
+# 并检查结果
+mysql -u root -p -h 192.168.150.21 << EOF
+change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_log_file="mysql-bin.001037", master_log_pos=1166046;
+start slave;
+show slave status\G;
+EOF
+
 
 # 结果中出现以下,表示正常
 # Slave_IO_Running               | Yes
@@ -121,16 +142,11 @@ mysql -u root -p -h 192.168.150.21 -e 'set global read_only=on;'
 在主从模式的基础上进行设置, 形成主主模式.
 
 ``` shell
-# 查看第二个节点(B)的 master 状态
-mysql -u root -p -h 192.168.150.21 -e 'show master status;'
-# 假设输出
-# File	Position	Binlog_Do_DB	Binlog_Ignore_DB
-# mysql-bin.000004	96
 
 # 设置 A 的  master 为 B
 # 并检查结果
 mysql -u root -p -h 192.168.150.24 << EOF
-change master to master_host="192.168.150.21", master_user="repl", master_password="password", master_log_file="mysql-bin.000004", master_log_pos=96;
+change master to master_host="192.168.150.21", master_user="repl", master_password="password", master_use_gtid=slave_pos;
 start slave;
 show slave status\G;
 EOF

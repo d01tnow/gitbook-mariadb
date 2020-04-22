@@ -248,16 +248,25 @@ wsrep_sst_auth="root:the_same_with_A"
 
 ``` shell
 # 带 --wsrep-new-cluster 参数启动集群
-# 查看第一个集群的 master 状态
-mysql -u root -p -h 192.168.150.24 -e 'show master status;'
-# 假设输出
-# File	Position	Binlog_Do_DB	Binlog_Ignore_DB
-# mysql-bin.000018	2418
+# 查看备份结果中第一个集群的 master 状态
+cat /backup/fullbackup/xtrabackup_binlog_info
 
+# 假设输出:  mariadb-bin.000005      835     0-1-36,1-1-3
+
+# 两种方式配置 change master
+# 推荐 gtid 模式
+mysql -u root -p -h 192.168.150.21 << EOF
+set global gtid_slave_pos="0-1-36,1-1-3"
+change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_use_gtid="0-1-36,1-1-3";
+start slave;
+show slave status\G;
+EOF
+
+# 第二种方式配置 change master: 使用日志文件和位置
 # 设置第二个集群的 B1 的 master 为 A1
 # 并检查结果
 mysql -u root -p -h 192.168.150.21 << EOF
-change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_log_file="mysql-bin.000018", master_log_pos=2418;
+change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_log_file="mysql-bin.000005", master_log_pos=835;
 start slave;
 show slave status\G;
 EOF
