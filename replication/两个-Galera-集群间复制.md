@@ -4,8 +4,8 @@
 
 前置条件:
 
-1. 主控机上安装 ansible 环境, Mariadb-client.
-2. 被控主机中安装 mariabackup 工具. [安装方法](../tools/installing-tools.md).
+1. 主控机上安装 ansible 环境, MariaDB-client.
+2. 被控主机中安装 MariaDB-client. MariaDB-backup,  工具. [安装方法](../tools/installing-tools.md).
 3. 被控主机 sudo 权限 或者 mysql user(容器内 mysql 用户:组 -- mysql:mysql . uid:gid -- 999:999).
 4. 数据库 root 或者 有 REPLICATION SLAVE 权限的 user.
 5. 第一个集群节点到第二个集群节点免密访问.
@@ -197,8 +197,8 @@ ssh user@192.168.150.21
 sudo mkdir /backup
 sudo chown user /backup
 # CTRL +D 退出 B, 回到 A
-
-rsync -avrP /Madb/mariadb/data/backup/fullbackup 192.168.150.21:/backup
+# 数据量大时需要后台同步数据到 B, 带宽限制(bwlimit)单位: KBPS
+nohup rsync -avrP --bwlimit=2500 /Madb/mariadb/data/backup/fullbackup 192.168.150.21:/backup >> ~/rsync.log 2>&1 &
 ```
 
 ### 部署第二个集群
@@ -256,8 +256,8 @@ cat /backup/fullbackup/xtrabackup_binlog_info
 # 两种方式配置 change master
 # 推荐 gtid 模式
 mysql -u root -p -h 192.168.150.21 << EOF
-set global gtid_slave_pos="0-1-36,1-1-3"
-change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_use_gtid="0-1-36,1-1-3";
+set global gtid_slave_pos="0-1-36,1-1-3";
+change master to master_host="192.168.150.24", master_user="repl", master_password="password", master_use_gtid=slave_pos;
 start slave;
 show slave status\G;
 EOF
