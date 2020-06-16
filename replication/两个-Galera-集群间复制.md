@@ -73,6 +73,14 @@ wsrep_gtid_mode=ON
 # N 取值范围 [0, 2**32)
 wsrep_gtid_domain_id=N
 
+# 以下两项是升级 10.4.13 过程中发现的疑似 bug
+# galera 不会判断路径结尾是否有 "/", 直接拼接相对路径,  造成路径类似"path//file"的情况, 而找不到文件.
+# mariabackup 方法也类似问题, 故只能使用 rsync
+wsrep_sst_method=rsync
+# wsrep_data_home_dir 指定galera集群数据存放目录, 默认使用 datadir 变量
+# datadir 变量默认是 "/var/lib/mysql/". 即使配置的是不以"/"结尾, mariadb也会会添加"/"
+# 结尾不目录不能加 "/".
+wsrep_data_home_dir="/var/lib/mysql"
 ```
 
 当前生产环境中, A 已经配置了 log_slave_update=ON, server_id=1, log_bin=/var/log/mysql/mysql-bin 
@@ -281,6 +289,9 @@ EOF
 ### 启动第二个集群的其他节点
 
 ``` shell
+# 在启动第二个点后可能会出现脑裂
+# 通过 mysql 客户端连接到第二个集群的 boot 节点, 执行 SET GLOBAL wsrep_provider_options='pc.bootstrap=YES';
+mysql -u root -p -h ipB1 -e "SET GLOBAL wsrep_provider_options='pc.bootstrap=YES';"
 # 启动后检查集群状态
 mysql -u root -p -h ipB2 -e "show status like 'wsrep%';"
 # wsrep_cluster_size           | 3
