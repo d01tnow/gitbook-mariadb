@@ -169,9 +169,9 @@ default_storage_engine=InnoDB
 ## Galera 集群要求必须为: 2 . 因为 Galera 集群不能使用表级锁.
 innodb_autoinc_lock_mode=2
 ## 日志刷盘模式
-## 0: 事务 commit 后不刷盘. 性能最好. 但服务崩溃时擦除最后一秒的事务. 考虑使用 Galera 集群, 使用 0 模式.
+## 0: 事务 commit 后不刷盘. 性能最好. 但服务崩溃时擦除最后一秒的事务.
 ## 1: 默认值. 配合 sync-log=1 获得最大的容错级别. 每次事务 commit 都会把 log buffer 刷盘.
-## 2: 每次 commit 后写入 log buffer, 每秒刷盘. 性能也不错, 但是有 OS崩溃或者掉电, 有可能丢失最后一秒内的事务数据.
+## 2: 每次 commit 后写入 log buffer, 每秒刷盘. 性能也不错, 但是有 OS崩溃或者掉电, 有可能丢失最后一秒内的事务数据. 考虑使用 Galera 集群, 使用 2 模式. 所有主机同时崩溃或者掉电, 有可能丢失最后一秒内的事务数据.
 ## 3: (version>=10.0), 模拟 group commit (3 syncs per group commit)
 innodb_flush_log_at_trx_commit=0
 ## 日志与数据刷盘方法
