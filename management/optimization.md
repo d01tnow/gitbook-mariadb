@@ -73,6 +73,13 @@ innodb_flush_log_at_trx_commit=1
 # 启用双写. 可以解决部分写失效问题, 但会带来更多的写负载, 大概会降低 10% 左右
 innodb_doublewrite=1
 
+# group commit for binlog
+# 加大, 优点: 提高事务吞吐量. 缺点: 事务延迟返回. 慎重!!
+# 延迟 binlog 刷盘, 等待binlog刷盘的个数. 默认为0(即不启用). 等待时间不超过 binlog_commit_wait_usec 
+binlog_commit_wait_count.
+# 延迟 binlog 刷盘, 等待的时间, 单位: 微秒. 在 binlog_commit_wait_count = 0时无效.
+binlog_commit_wait_usec
+
 # 每张表是否独立表空间文件. 默认已经是启用.
 innodb_file_per_table=1
 # innodb 打开表的最大数量.
